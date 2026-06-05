@@ -1,31 +1,30 @@
-# Contributing
+# コントリビューション
 
-The best contribution is a fork.
+最良のコントリビューションはフォークです。
 
-This repo is a reference implementation — a worked example of one device
-that speaks the BLE protocol described in [REFERENCE.md](REFERENCE.md).
-It's not an actively maintained project, and we'd rather you build the
-thing _you_ want than bend this one into it.
+このリポジトリはリファレンス実装です。つまり、[REFERENCE.md](REFERENCE.md) に
+記載された BLE プロトコルを話す 1 つのデバイスの実例です。活発に保守されている
+プロジェクトではありません。こちらの実装に合わせて曲げるよりも、あなたが作りたい
+ものを作ってほしいと考えています。
 
-## So what should I do instead?
+## では、代わりに何をすればよいですか？
 
-**Fork it and make it yours.** Swap the M5Stick for a Pi Pico W. Replace
-the ASCII pets with an e-ink panel. Put it in a 3D-printed shell. Rip
-out everything but `ble_bridge.cpp` and the JSON parser. The protocol is
-the stable surface — `REFERENCE.md` is the contract, this firmware is
-just one way to honor it.
+**フォークして、自分のものにしてください。** M5Stick を Pi Pico W に差し替える。
+ASCII ペットを電子ペーパー画面に置き換える。3D プリントした筐体に入れる。
+`ble_bridge.cpp` と JSON パーサー以外を全部取り除く。安定した公開面は
+プロトコルです。`REFERENCE.md` が契約であり、このファームウェアはそれを満たす
+方法の 1 つにすぎません。
 
-## What we will take
+## 受け入れるもの
 
-- Corrections to `REFERENCE.md` if the protocol docs are wrong or
-  unclear
-- Fixes for bugs that make the reference _not work as a reference_ —
-  i.e., it doesn't pair, doesn't render, crashes on boot
+- プロトコル文書が間違っている、または不明確な場合の `REFERENCE.md` の修正
+- リファレンスとして機能しなくなるバグの修正。たとえば、ペアリングできない、
+  描画できない、起動時にクラッシュする、といったもの
 
-## What we won't take
+## 受け入れないもの
 
-- New features, new pets, new screens
-- Ports to other boards (fork!)
-- Refactors, style changes, dependency bumps
+- 新機能、新しいペット、新しい画面
+- 他のボードへの移植（フォークしてください）
+- リファクタリング、スタイル変更、依存関係の更新
 
-If you're unsure which bucket something falls in, it's likely the second one.
+どちらに入るか迷う場合は、おそらく後者です。
