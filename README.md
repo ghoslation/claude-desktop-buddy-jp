@@ -1,100 +1,102 @@
 # claude-desktop-buddy
 
-Claude for macOS and Windows can connect Claude Cowork and Claude Code to
-maker devices over BLE, so developers and makers can build hardware that
-displays permission prompts, recent messages, and other interactions. We've
-been impressed by the creativity of the maker community around Claude -
-providing a lightweight, opt-in API is our way of making it easier to build
-fun little hardware devices that integrate with Claude.
+macOS 版および Windows 版の Claude は、BLE 経由で Claude Cowork や
+Claude Code をメイカー向けデバイスに接続できます。これにより、開発者や
+メイカーは、権限確認、最近のメッセージ、その他のインタラクションを表示する
+ハードウェアを作れます。Claude の周辺でメイカーコミュニティが生み出してきた
+創造性には驚かされてきました。軽量でオプトインの API を提供することは、
+Claude と連携する小さく楽しいハードウェアを作りやすくするための取り組みです。
 
-> **Building your own device?** You don't need any of the code here. See
-> **[REFERENCE.md](REFERENCE.md)** for the wire protocol: Nordic UART
-> Service UUIDs, JSON schemas, and the folder push transport.
+> **自分のデバイスを作る場合** このリポジトリ内のコードは不要です。
+> ワイヤープロトコルについては **[REFERENCE.md](REFERENCE.md)** を参照してください。
+> Nordic UART Service の UUID、JSON スキーマ、フォルダープッシュの転送方式を
+> 記載しています。
 
-As an example, we built a desk pet on ESP32 that lives off permission
-approvals and interaction with Claude. It sleeps when nothing's happening,
-wakes when sessions start, gets visibly impatient when an approval prompt is
-waiting, and lets you approve or deny right from the device.
+例として、ESP32 上で動くデスクペットを作りました。このペットは Claude の
+権限承認やインタラクションに反応して過ごします。何も起きていないと眠り、
+セッションが始まると起き、承認プロンプトが待機していると目に見えてそわそわし、
+デバイス上から承認または拒否できます。
 
 <p align="center">
-  <img src="docs/device.jpg" alt="M5StickC Plus running the buddy firmware" width="500">
+  <img src="docs/device.jpg" alt="buddy ファームウェアを実行している M5StickC Plus" width="500">
 </p>
 
-## Hardware
+## ハードウェア
 
-The firmware targets ESP32 with the Arduino framework. As written, it
-depends on the M5StickCPlus library for its display, IMU, and button
-drivers—so you'll need that board, or a fork that swaps those drivers for
-your own pin layout.
+このファームウェアは Arduino フレームワークを使う ESP32 を対象にしています。
+現状では、ディスプレイ、IMU、ボタンドライバーとして M5StickCPlus ライブラリに
+依存しています。そのため、このボードを使うか、各ドライバーを自分のピン配置に
+差し替えたフォークが必要です。
 
-## Flashing
+## 書き込み
 
-Install
-[PlatformIO Core](https://docs.platformio.org/en/latest/core/installation/),
-then:
+[PlatformIO Core](https://docs.platformio.org/en/latest/core/installation/)
+をインストールしてから、次を実行します。
 
 ```bash
 pio run -t upload
 ```
 
-If you're starting from a previously-flashed device, wipe it first:
+以前に書き込み済みのデバイスから始める場合は、先に消去します。
 
 ```bash
 pio run -t erase && pio run -t upload
 ```
 
-Once running, you can also wipe everything from the device itself: **hold A
-→ settings → reset → factory reset → tap twice**.
+起動後は、デバイス本体からすべてを消去することもできます。
+**A を長押し → settings → reset → factory reset → 2 回タップ**。
 
-## Pairing
+## ペアリング
 
-To pair your device with Claude, first enable developer mode (**Help →
-Troubleshooting → Enable Developer Mode**). Then, open the Hardware Buddy
-window in **Developer → Open Hardware Buddy…**, click **Connect**, and pick
-your device from the list. macOS will prompt for Bluetooth permission on
-first connect; grant it.
+デバイスを Claude とペアリングするには、まず開発者モードを有効にします
+（**Help → Troubleshooting → Enable Developer Mode**）。次に、
+**Developer → Open Hardware Buddy…** から Hardware Buddy ウィンドウを開き、
+**Connect** をクリックして、一覧からデバイスを選択します。初回接続時には
+macOS が Bluetooth 権限を求めるので、許可してください。
 
 <p align="center">
-  <img src="docs/menu.png" alt="Developer → Open Hardware Buddy… menu item" width="420">
-  <img src="docs/hardware-buddy-window.png" alt="Hardware Buddy window with Connect button and folder drop target" width="420">
+  <img src="docs/menu.png" alt="Developer → Open Hardware Buddy… メニュー項目" width="420">
+  <img src="docs/hardware-buddy-window.png"
+       alt="Connect ボタンとフォルダードロップ先を持つ Hardware Buddy ウィンドウ"
+       width="420">
 </p>
 
-Once paired, the bridge auto-reconnects whenever both sides are awake.
+ペアリング後は、両側が起きている限りブリッジが自動で再接続します。
 
-If discovery isn't finding the stick:
+検出でスティックが見つからない場合は、次を確認してください。
 
-- Make sure it's awake (any button press)
-- Check the stick's settings menu → bluetooth is on
+- スティックが起きていること（いずれかのボタンを押す）
+- スティックの設定メニューで bluetooth がオンになっていること
 
-## Controls
+## 操作
 
-|                         | Normal               | Pet         | Info        | Approval    |
-| ----------------------- | -------------------- | ----------- | ----------- | ----------- |
-| **A** (front)           | next screen          | next screen | next screen | **approve** |
-| **B** (right)           | scroll transcript    | next page   | next page   | **deny**    |
-| **Hold A**              | menu                 | menu        | menu        | menu        |
-| **Power** (left, short) | toggle screen off    |             |             |             |
-| **Power** (left, ~6s)   | hard power off       |             |             |             |
-| **Shake**               | dizzy                |             |             | —           |
-| **Face-down**           | nap (energy refills) |             |             |             |
+|                         | 通常時                     | ペット       | 情報        | 承認待ち    |
+| ----------------------- | -------------------------- | ------------ | ----------- | ----------- |
+| **A**（前面）           | 次の画面                   | 次の画面     | 次の画面    | **承認**    |
+| **B**（右側）           | トランスクリプトをスクロール | 次のページ   | 次のページ  | **拒否**    |
+| **A 長押し**            | メニュー                   | メニュー     | メニュー    | メニュー    |
+| **Power**（左側、短押し） | 画面オフ切り替え           |              |             |             |
+| **Power**（左側、約 6 秒） | 強制電源オフ               |              |             |             |
+| **振る**                | めまい状態                 |              |             | —           |
+| **伏せる**              | 昼寝（エネルギー回復）     |              |             |             |
 
-The screen auto-powers-off after 30s of no interaction (kept on while an
-approval prompt is up). Any button press wakes it.
+操作がない状態が 30 秒続くと画面は自動でオフになります（承認プロンプト表示中は
+点灯したままです）。いずれかのボタンを押すと復帰します。
 
-## ASCII pets
+## ASCII ペット
 
-Eighteen pets, each with seven animations (sleep, idle, busy, attention,
-celebrate, dizzy, heart). Menu → "next pet" cycles them with a counter.
-Choice persists to NVS.
+18 種類のペットがあり、それぞれ 7 種類のアニメーション
+（sleep、idle、busy、attention、celebrate、dizzy、heart）を持ちます。
+Menu → "next pet" でカウンター付きで順に切り替わります。選択は NVS に保存されます。
 
-## GIF pets
+## GIF ペット
 
-If you want a custom GIF character instead of an ASCII buddy, drag a
-character pack folder onto the drop target in the Hardware Buddy window. The
-app streams it over BLE and the stick switches to GIF mode live. **Settings
-→ delete char** reverts to ASCII mode.
+ASCII buddy の代わりにカスタム GIF キャラクターを使いたい場合は、
+Hardware Buddy ウィンドウのドロップ先にキャラクターパックのフォルダーを
+ドラッグします。アプリが BLE 経由でストリーミングし、スティックはその場で
+GIF モードに切り替わります。**Settings → delete char** で ASCII モードに戻せます。
 
-A character pack is a folder with `manifest.json` and 96px-wide GIFs:
+キャラクターパックは、`manifest.json` と幅 96px の GIF を含むフォルダーです。
 
 ```json
 {
@@ -118,55 +120,55 @@ A character pack is a folder with `manifest.json` and 96px-wide GIFs:
 }
 ```
 
-State values can be a single filename or an array. Arrays rotate: each
-loop-end advances to the next GIF, useful for an idle activity carousel so
-the home screen doesn't loop one clip forever.
+ステート値には単一のファイル名または配列を指定できます。配列はローテーションします。
+各ループの終端で次の GIF に進むため、ホーム画面で 1 つのクリップを延々と
+繰り返すのではなく、待機アクションのカルーセルとして使えます。
 
-GIFs are 96px wide; height up to ~140px stays on a 135×240 portrait screen.
-Crop tight to the character — transparent margins waste screen and shrink
-the sprite. `tools/prep_character.py` handles the resize: feed it source
-GIFs at any sizes and it produces a 96px-wide set where the character is the
-same scale in every state.
+GIF は幅 96px です。高さは約 140px までなら 135×240 の縦画面に収まります。
+キャラクターの周囲はタイトに切り抜いてください。透明な余白は画面を浪費し、
+スプライトを小さくしてしまいます。`tools/prep_character.py` はリサイズを処理します。
+任意サイズの元 GIF を渡すと、すべてのステートでキャラクターのスケールが揃った
+幅 96px のセットを生成します。
 
-The whole folder must fit under 1.8MB —
-`gifsicle --lossy=80 -O3 --colors 64` typically cuts 40–60%.
+フォルダー全体は 1.8MB 未満に収める必要があります。
+`gifsicle --lossy=80 -O3 --colors 64` を使うと、通常は 40〜60% 削減できます。
 
-See `characters/bufo/` for a working example.
+動作する例は `characters/bufo/` を参照してください。
 
-If you're iterating on a character and would rather skip the BLE round-trip,
-`tools/flash_character.py characters/bufo` stages it into `data/` and runs
-`pio run -t uploadfs` directly over USB.
+キャラクターを調整中で BLE の往復を省きたい場合は、
+`tools/flash_character.py characters/bufo` で `data/` にステージングし、
+USB 経由で `pio run -t uploadfs` を直接実行できます。
 
-## The seven states
+## 7 つのステート
 
-| State       | Trigger                     | Feel                        |
-| ----------- | --------------------------- | --------------------------- |
-| `sleep`     | bridge not connected        | eyes closed, slow breathing |
-| `idle`      | connected, nothing urgent   | blinking, looking around    |
-| `busy`      | sessions actively running   | sweating, working           |
-| `attention` | approval pending            | alert, **LED blinks**       |
-| `celebrate` | level up (every 50K tokens) | confetti, bouncing          |
-| `dizzy`     | you shook the stick         | spiral eyes, wobbling       |
-| `heart`     | approved in under 5s        | floating hearts             |
+| State       | トリガー                    | 雰囲気                         |
+| ----------- | --------------------------- | ------------------------------ |
+| `sleep`     | ブリッジ未接続              | 目を閉じ、ゆっくり呼吸         |
+| `idle`      | 接続済み、緊急事項なし      | まばたき、周囲を見る           |
+| `busy`      | セッションが実行中          | 汗をかき、作業中               |
+| `attention` | 承認待ち                    | 注意喚起、**LED 点滅**         |
+| `celebrate` | レベルアップ（50K トークンごと） | 紙吹雪、跳ねる             |
+| `dizzy`     | スティックを振った          | 渦巻き目、ふらつき             |
+| `heart`     | 5 秒以内に承認              | ハートが浮かぶ                 |
 
-## Project layout
+## プロジェクト構成
 
 ```
 src/
-  main.cpp       — loop, state machine, UI screens
-  buddy.cpp      — ASCII species dispatch + render helpers
-  buddies/       — one file per species, seven anim functions each
-  ble_bridge.cpp — Nordic UART service, line-buffered TX/RX
-  character.cpp  — GIF decode + render
-  data.h         — wire protocol, JSON parse
-  xfer.h         — folder push receiver
-  stats.h        — NVS-backed stats, settings, owner, species choice
-characters/      — example GIF character packs
-tools/           — generators and converters
+  main.cpp       — ループ、ステートマシン、UI 画面
+  buddy.cpp      — ASCII 種別のディスパッチと描画ヘルパー
+  buddies/       — 種別ごとに 1 ファイル、各 7 つのアニメーション関数
+  ble_bridge.cpp — Nordic UART service、行バッファ付き TX/RX
+  character.cpp  — GIF デコードと描画
+  data.h         — ワイヤープロトコル、JSON パース
+  xfer.h         — フォルダープッシュ受信側
+  stats.h        — NVS に保存される統計、設定、所有者、種別選択
+characters/      — GIF キャラクターパックの例
+tools/           — ジェネレーターとコンバーター
 ```
 
-## Availability
+## 利用可能性
 
-The BLE API is only available when the desktop apps are in developer mode
-(**Help → Troubleshooting → Enable Developer Mode**). It's intended for
-makers and developers and isn't an officially supported product feature.
+BLE API は、デスクトップアプリが開発者モードのときのみ利用できます
+（**Help → Troubleshooting → Enable Developer Mode**）。これはメイカーや
+開発者向けのものであり、公式にサポートされる製品機能ではありません。

@@ -1,26 +1,27 @@
-# Hardware Buddy BLE Protocol
+# Hardware Buddy BLE プロトコル
 
-This is the wire protocol the Claude desktop apps speak over Bluetooth LE.
-You don't need anything from this repository to implement it. Any device
-that can advertise the Nordic UART Service and parse newline-delimited JSON
-will work: Arduino, ESP32, nRF52, a Raspberry Pi with a BLE dongle.
+これは Claude デスクトップアプリが Bluetooth LE 経由で話すワイヤープロトコルです。
+実装するために、このリポジトリ内のものは不要です。Nordic UART Service を
+アドバタイズし、改行区切り JSON をパースできるデバイスなら動作します。
+Arduino、ESP32、nRF52、BLE ドングル付き Raspberry Pi などで実装できます。
 
-## Enabling the bridge
+## ブリッジの有効化
 
-The BLE bridge is off by default. In Claude for macOS or Windows:
+BLE ブリッジはデフォルトではオフです。macOS 版または Windows 版の Claude で、
+次を実行します。
 
-1. **Help → Troubleshooting → Enable Developer Mode** — adds a **Developer**
-   menu to the menu bar.
-2. **Developer → Open Hardware Buddy…** — opens the pairing window.
-3. Click **Connect** and pick your device from the scan list. The OS will
-   prompt for Bluetooth permission on first use.
+1. **Help → Troubleshooting → Enable Developer Mode** を選びます。メニューバーに
+   **Developer** メニューが追加されます。
+2. **Developer → Open Hardware Buddy…** を選びます。ペアリングウィンドウが開きます。
+3. **Connect** をクリックし、スキャン一覧からデバイスを選択します。初回利用時は
+   OS が Bluetooth 権限を求めます。
 
-Once paired the bridge auto-reconnects in the background; you only need the
-window open for initial pairing, the stats panel, or the folder drop target.
+ペアリング後、ブリッジはバックグラウンドで自動再接続します。このウィンドウが必要なのは、
+初回ペアリング、統計パネルの確認、またはフォルダーのドロップ先として使う場合だけです。
 
-## Transport
+## トランスポート
 
-**BLE Nordic UART Service** (the de-facto serial-over-BLE standard):
+**BLE Nordic UART Service**（事実上の serial-over-BLE 標準）:
 
 |                               | UUID                                   |
 | ----------------------------- | -------------------------------------- |
@@ -28,19 +29,19 @@ window open for initial pairing, the stats panel, or the folder drop target.
 | RX (desktop → device, write)  | `6e400002-b5a3-f393-e0a9-e50e24dcca9e` |
 | TX (device → desktop, notify) | `6e400003-b5a3-f393-e0a9-e50e24dcca9e` |
 
-Advertise a name starting with `Claude` over the Nordic UART Service so the
-device picker can filter to you. Appending a few bytes of your BT MAC keeps
-multiple devices distinguishable in the picker.
+デバイスピッカーが絞り込めるよう、Nordic UART Service 上で `Claude` から始まる名前を
+アドバタイズしてください。BT MAC の数バイトを末尾に付けると、複数デバイスを
+ピッカー上で区別しやすくなります。
 
-Everything on the wire is UTF-8 JSON—one object per line, terminated with
-`\n`. The desktop reassembles multi-packet lines on its end (notifications
-fragment at the MTU boundary, just send the bytes). Your device needs to do
-the same: accumulate bytes until you see `\n`, then parse.
+ワイヤー上のすべてのデータは UTF-8 JSON です。1 行に 1 オブジェクトを置き、
+`\n` で終端します。デスクトップ側は複数パケットに分かれた行を再構成します
+（通知は MTU 境界で分割されるため、単にバイト列を送れば問題ありません）。
+デバイス側も同様に、`\n` を受け取るまでバイトを蓄積し、その後パースしてください。
 
-## Heartbeat snapshot
+## ハートビートスナップショット
 
-The desktop apps send a heartbeat snapshot whenever something changes, plus
-a keepalive every 10 seconds:
+デスクトップアプリは、何かが変わるたびにハートビートスナップショットを送信します。
+加えて、10 秒ごとに keepalive を送信します。
 
 ```json
 {
@@ -59,31 +60,28 @@ a keepalive every 10 seconds:
 }
 ```
 
-| Field          | Meaning                                                                           |
+| Field          | 意味                                                                              |
 | -------------- | --------------------------------------------------------------------------------- |
-| `total`        | Count of all sessions                                                             |
-| `running`      | Sessions actively generating                                                      |
-| `waiting`      | Sessions blocked on a permission prompt                                           |
-| `msg`          | One-line summary suitable for a small display                                     |
-| `entries`      | Recent transcript lines, newest first (capped to a few)                           |
-| `tokens`       | Cumulative output tokens since the desktop app started                            |
-| `tokens_today` | Output tokens since local midnight (persisted, survives restart)                  |
-| `prompt`       | Only present when a permission decision is needed. The `id` is what you echo back |
+| `total`        | すべてのセッション数                                                              |
+| `running`      | 生成中のセッション数                                                              |
+| `waiting`      | 権限プロンプトでブロックされているセッション数                                    |
+| `msg`          | 小さな画面に適した 1 行の概要                                                     |
+| `entries`      | 最近のトランスクリプト行。新しいものが先頭（数件に制限）                          |
+| `tokens`       | デスクトップアプリ起動後の累積出力トークン数                                      |
+| `tokens_today` | ローカルの午前 0 時以降の出力トークン数（永続化され、再起動後も残る）              |
+| `prompt`       | 権限判断が必要なときのみ存在します。`id` はデバイスから返す値です                 |
 
-A few useful derived signals: `running > 0` means at least one session is
-actively generating, `waiting > 0` means a permission prompt is blocking,
-and `total == 0` means nothing is open. `tokens_today` resets at local
-midnight if you want a daily counter.
+便利な派生シグナルとして、`running > 0` は少なくとも 1 つのセッションが生成中であること、
+`waiting > 0` は権限プロンプトがブロックしていること、`total == 0` は何も開いていないことを
+意味します。日次カウンターが必要な場合、`tokens_today` はローカルの午前 0 時にリセットされます。
 
-If you don't receive a snapshot for ~30 seconds, treat the connection as
-dead.
+約 30 秒間スナップショットを受信しない場合は、接続が切れたものとして扱ってください。
 
-## Turn events
+## ターンイベント
 
-Each completed turn also fires a one-shot event containing the raw SDK
-content array—text blocks, tool calls, and any other content from the
-message. Events that serialize larger than 4KB are dropped (measured in
-UTF-8 bytes, not character count).
+完了した各ターンでは、raw SDK content array を含む 1 回限りのイベントも送信されます。
+内容にはテキストブロック、ツール呼び出し、メッセージ内のその他の content が含まれます。
+シリアライズ後に 4KB を超えるイベントは破棄されます（文字数ではなく UTF-8 バイト数で測定）。
 
 ```json
 {
@@ -93,52 +91,53 @@ UTF-8 bytes, not character count).
 }
 ```
 
-## Permission decisions
+## 権限判断
 
-When `prompt` is present, your device can return a response. Send one of:
+`prompt` が存在する場合、デバイスは応答を返せます。次のいずれかを送信してください。
 
 ```json
 {"cmd":"permission","id":"req_abc123","decision":"once"}
 {"cmd":"permission","id":"req_abc123","decision":"deny"}
 ```
 
-The `id` must match `prompt.id` exactly. The desktop forwards this to the
-session manager: `"once"` approves the tool call, `"deny"` rejects it.
+`id` は `prompt.id` と完全に一致する必要があります。デスクトップはこれを
+セッションマネージャーに転送します。`"once"` はツール呼び出しを承認し、
+`"deny"` は拒否します。
 
-## One-shot on connect
+## 接続時の 1 回限りの送信
 
-Time sync (epoch seconds + timezone offset in seconds):
+時刻同期（epoch 秒 + タイムゾーンオフセット秒）:
 
 ```json
 { "time": [1775731234, -25200] }
 ```
 
-Owner name (the user's first name from their account):
+所有者名（アカウント上のユーザーのファーストネーム）:
 
 ```json
 { "cmd": "owner", "name": "Felix" }
 ```
 
-## Commands and acks
+## コマンドと ack
 
-Any command the desktop sends with a `cmd` field expects a matching ack:
+デスクトップが `cmd` フィールド付きで送るコマンドは、一致する ack を期待します。
 
 ```json
 { "ack": "<same as cmd>", "ok": true, "n": 0 }
 ```
 
-Set `ok:false` and optionally `error:"..."` if you couldn't do it. `n` is a
-generic counter (e.g. bytes written for chunk acks, otherwise 0).
+実行できなかった場合は `ok:false` を設定し、必要なら `error:"..."` を付けてください。
+`n` は汎用カウンターです（chunk ack では書き込み済みバイト数、それ以外では通常 0）。
 
-| Command                          | Payload                  | Ack you send back            |
-| -------------------------------- | ------------------------ | ---------------------------- |
-| `{"cmd":"status"}`               | —                        | see Status response below    |
-| `{"cmd":"name","name":"Clawd"}`  | sets device display name | `{"ack":"name","ok":true}`   |
-| `{"cmd":"owner","name":"Felix"}` | sets owner name          | `{"ack":"owner","ok":true}`  |
-| `{"cmd":"unpair"}`               | erase stored BLE bonds   | `{"ack":"unpair","ok":true}` |
+| Command                          | Payload                    | 返す ack                     |
+| -------------------------------- | -------------------------- | ---------------------------- |
+| `{"cmd":"status"}`               | —                          | 下記の Status response を参照 |
+| `{"cmd":"name","name":"Clawd"}`  | デバイス表示名を設定       | `{"ack":"name","ok":true}`   |
+| `{"cmd":"owner","name":"Felix"}` | 所有者名を設定             | `{"ack":"owner","ok":true}`  |
+| `{"cmd":"unpair"}`               | 保存済み BLE bond を消去   | `{"ack":"unpair","ok":true}` |
 
-**Status response.** The desktop polls this every couple of seconds to
-populate the Hardware Buddy window's stats panel:
+**Status response.** デスクトップは Hardware Buddy ウィンドウの統計パネルを埋めるため、
+数秒ごとにこれをポーリングします。
 
 ```json
 {
@@ -154,13 +153,13 @@ populate the Hardware Buddy window's stats panel:
 }
 ```
 
-You can omit fields you don't have. `bat.mA` negative means charging.
+持っていないフィールドは省略できます。`bat.mA` が負の値なら充電中を意味します。
 
-## Folder push
+## フォルダープッシュ
 
-The Hardware Buddy window has a drop target. Dropping a folder there streams
-its flat contents to your device. The transport is content-agnostic: GIFs,
-config blobs, firmware images, whatever you want under 1.8MB total.
+Hardware Buddy ウィンドウにはドロップ先があります。そこにフォルダーをドロップすると、
+フラットな内容がデバイスにストリーミングされます。このトランスポートは内容に依存しません。
+GIF、設定 blob、ファームウェアイメージなど、合計 1.8MB 未満なら任意のものを扱えます。
 
 ```
 desktop:  {"cmd":"char_begin","name":"bufo","total":184320}
@@ -180,45 +179,43 @@ desktop:  {"cmd":"char_end"}
 device:   {"ack":"char_end","ok":true}
 ```
 
-The desktop sends every regular file in the folder (no recursion, dotfiles
-skipped), base64-encodes each chunk, and waits for each ack before sending
-the next. You decode and append; the protocol is sequential so you don't
-need to buffer whole files.
+デスクトップはフォルダー内の通常ファイルをすべて送信します
+（再帰なし、dotfile はスキップ）。各 chunk を base64 エンコードし、次を送る前に
+各 ack を待ちます。デバイス側ではデコードして追記します。プロトコルは逐次的なので、
+ファイル全体をバッファする必要はありません。
 
-`char_begin.name` is whatever the folder is called, unless the folder
-contains a `manifest.json` with a `"name"` field, in which case that wins.
+`char_begin.name` は通常フォルダー名です。ただし、フォルダーに `"name"` フィールドを
+含む `manifest.json` がある場合は、その値が優先されます。
 
-If your device doesn't want pushed files, don't ack `char_begin`. The
-desktop times out after a few seconds and tells the user it failed.
+プッシュされたファイルを受け取りたくない場合は、`char_begin` に ack を返さないでください。
+デスクトップは数秒後にタイムアウトし、失敗したことをユーザーに伝えます。
 
-## Security and pairing
+## セキュリティとペアリング
 
-The desktop app connects whether or not your device requests link
-encryption, but transcript snippets and tool-call hints flow over this
-link, so an unencrypted device is sniffable by anyone in radio range
-with a cheap nRF dongle. You should require **LE Secure Connections
-bonding**: mark your NUS characteristics (and the TX CCCD) as
-encrypted-only and advertise DisplayOnly IO capability. The first GATT
-access then triggers OS pairing — the desktop prompts the user for the
-6-digit passkey your device displays — and the link is AES-CCM-encrypted
-from then on. Reconnects reuse the stored LTK without re-prompting.
+デスクトップアプリは、デバイスがリンク暗号化を要求するかどうかに関係なく接続します。
+ただし、トランスクリプトの抜粋やツール呼び出しのヒントがこのリンクを流れるため、
+暗号化されていないデバイスは、無線範囲内にいる人が安価な nRF ドングルで傍受できます。
+**LE Secure Connections bonding** を必須にすることを推奨します。NUS characteristic
+（および TX CCCD）を encrypted-only にし、DisplayOnly IO capability をアドバタイズします。
+最初の GATT アクセスで OS ペアリングが開始され、デスクトップはデバイスに表示された
+6 桁の passkey をユーザーに求めます。その後、リンクは AES-CCM で暗号化されます。
+再接続では保存済み LTK が再利用され、再度プロンプトは出ません。
 
-The desktop app supports both encrypted and unencrypted devices. Two
-protocol hooks tie into pairing:
+デスクトップアプリは暗号化デバイスと非暗号化デバイスの両方をサポートします。
+ペアリングに関係するプロトコルフックは 2 つです。
 
-- Include `"sec": true` in your status ack's `data` once the link is
-  encrypted (or `false`/omit it if you don't bond).
-- Handle `{"cmd":"unpair"}` by erasing your stored bonds. The desktop
-  sends this when the user clicks **Forget**, so the next pairing shows
-  a fresh passkey. Ack it like any other command.
+- リンクが暗号化されたら、status ack の `data` に `"sec": true` を含めます
+  （bond しない場合は `false`、または省略）。
+- `{"cmd":"unpair"}` を受け取ったら、保存済み bond を消去します。ユーザーが
+  **Forget** をクリックすると、デスクトップがこれを送信します。次回ペアリング時には
+  新しい passkey が表示されます。他のコマンドと同じように ack してください。
 
-If you accept the folder-push protocol, validate `file.path` before
-writing — the desktop sends whatever filenames are in the dropped
-folder, so reject `..` and absolute paths unless your filesystem holds
-nothing you'd mind overwritten.
+フォルダープッシュプロトコルを受け入れる場合は、書き込み前に `file.path` を検証してください。
+デスクトップはドロップされたフォルダー内のファイル名をそのまま送信するため、
+上書きされて困るものがファイルシステム上にあるなら、`..` や絶対パスは拒否してください。
 
-## Availability
+## 利用可能性
 
-The BLE API is only available when the desktop apps are in developer mode
-(**Help → Troubleshooting → Enable Developer Mode**). It's intended for
-makers and developers and isn't an officially supported product feature.
+BLE API は、デスクトップアプリが開発者モードのときのみ利用できます
+（**Help → Troubleshooting → Enable Developer Mode**）。これはメイカーや
+開発者向けのものであり、公式にサポートされる製品機能ではありません。

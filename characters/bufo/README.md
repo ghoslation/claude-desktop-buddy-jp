@@ -1,18 +1,19 @@
 # bufo
 
-The frog. Bufo started life as a custom emoji set (the "bufo pack")
-that spread through tech-company workspaces in the late 2010s and never
-left. He has a reaction face for every situation and is, by all accounts,
-just trying his best.
+カエルです。Bufo は、2010 年代後半にテック企業のワークスペースで広まった
+カスタム絵文字セット（"bufo pack"）として生まれ、そのまま定着しました。
+どんな状況にも反応できる表情を持っていて、誰に聞いても、ただ一生懸命やっている
+だけです。
 
-These GIFs are from the community **bufo** emoji set at
-[bufo.zone](https://bufo.zone) and are not covered by this repository's
-MIT license — see the top-level `LICENSE` file.
+これらの GIF は [bufo.zone](https://bufo.zone) にあるコミュニティ製の
+**bufo** 絵文字セットに由来し、このリポジトリの MIT ライセンスの対象では
+ありません。トップレベルの `LICENSE` ファイルを参照してください。
 
-This is one example of a character pack — fifteen GIFs and a manifest
-mapping them to the seven states. The idle state has nine variants so the
-home screen rotates through different blinks and glances instead of looping
-one clip.
+これはキャラクターパックの一例です。15 個の GIF と、それらを 7 つのステートに
+対応付ける manifest を含みます。idle ステートには 9 種類のバリエーションがあるため、
+ホーム画面では 1 つのクリップを繰り返すのではなく、異なるまばたきや視線が
+ローテーションします。
 
-Drag this folder onto the Hardware Buddy window to install, or
-`python3 tools/flash_character.py characters/bufo` to flash over USB.
+インストールするには、このフォルダーを Hardware Buddy ウィンドウにドラッグします。
+USB 経由で書き込む場合は `python3 tools/flash_character.py characters/bufo` を
+実行してください。
